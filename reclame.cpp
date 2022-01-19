@@ -207,9 +207,12 @@ class Task2 : public Task {
     }
 };
 
-int main() {
+
+ int main() {
 
     Task2 task2;
+
+    string final_result = "";
 
     task2.read_problem_data();
 
@@ -217,22 +220,65 @@ int main() {
     // out_test.open("out.txt", std::ios_base::app);
     // ofstream oracle_test;
     // oracle_test.open("test_oracle.txt", std::ios_base::app);
-    
-    for (int k = 1; k <= task2.n; ++k) {
-        task2.k = k;
+
+    int left = 1, right = task2.n;
+    while (left <= right) {
+        int mid = (left + right) / 2;
+
+        // try to find a vertex cover with mid vertices
+        task2.k = mid;
 
         task2.formulate_oracle_question();
         task2.ask_oracle();
         task2.decipher_oracle_answer();
 
-        // oracle_test << task2.oracle_verdict << "\n";
-
         if (task2.oracle_verdict == true) {
-            task2.write_answer();
-            break;
+            // save the result as this may be the smallest vertex cover
+            final_result = task2.result;
+            // this can be a vertex cover, so try to find a smaller one
+            right = mid - 1;
+        } else {
+            // if a vertex cover can't be formed with mid vertices, then evidently a smaller
+            // number of vertices can't form a cover, so go up
+            left = mid + 1;
         }
-        // out_test << k << "\n";
     }
+
+    cout << final_result;
+
+    // oracle_test << task2.oracle_verdict << "\n";
+
+    // out_test << k << "\n";
 
     return 0;
 }
+
+// int main() {
+
+//     Task2 task2;
+
+//     task2.read_problem_data();
+
+//     // ofstream out_test;
+//     // out_test.open("out.txt", std::ios_base::app);
+//     // ofstream oracle_test;
+//     // oracle_test.open("test_oracle.txt", std::ios_base::app);
+    
+//     for (int k = 1; k <= task2.n; ++k) {
+//         task2.k = k;
+
+//         task2.formulate_oracle_question();
+//         task2.ask_oracle();
+//         task2.decipher_oracle_answer();
+
+//         // oracle_test << task2.oracle_verdict << "\n";
+
+//         if (task2.oracle_verdict == true) {
+//             task2.write_answer();
+//             break;
+//         }
+//         // out_test << k << "\n";
+//     }
+
+//     return 0;
+// }
