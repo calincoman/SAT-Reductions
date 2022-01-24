@@ -35,6 +35,7 @@ class Grader(object):
         except:
             self.exit(code=1, err='{} is missing'.format(self.input_path))
 
+        print(self.output_path)
         try:
             with open(self.output_path) as f:
                 output = f.readlines()

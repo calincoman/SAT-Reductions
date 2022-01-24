@@ -107,10 +107,6 @@ def make_build(config):
             update_grade(config, -config.penalty_warnings)
             update_grade_vmr(config, -config.penalty_warnings, reason)
 
-    for task in config.tasks:
-        if not pathlib.Path(task.id).is_file() or not os.access(os.path.join('.', task.id), os.X_OK):
-            log('[WARNING] Executable \'{}\' not found!'.format(task.id))
-
     log('----- make_build')
     return 0
 
@@ -321,6 +317,7 @@ def check_test(task, test):
                                stdin=subprocess.DEVNULL,
                                stdout=subprocess.DEVNULL,
                                stderr=subprocess.PIPE,
+                               executable='/bin/bash'
                                )
     except Exception as e:
         log_replace('running {:10s} - UPS: {}'.format(stage_name, str(e)))

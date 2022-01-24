@@ -13,4 +13,5 @@ sudo apt-get install                        \
 sudo pip3 install                           \
     argparse                                \
     pathlib                                 \
-    recordclass
+    recordclass                             \
+    python-sat

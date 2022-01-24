@@ -9,35 +9,26 @@ using namespace std;
 
 ofstream out_test;
 
+/**
+ * Class for solving the k-clique problem
+ */
 class Task1 : public Task {
   public:
-  
-     //string in_filename;     //the file containing the problem input
-    string oracle_in_filename = "sat.cnf";  //the file containing the oracle input
-    string oracle_out_filename = "sat.sol"; //the file containing the oracle output
-     //string out_filename;       //the file containing the problem output
-     
-    string result = "p cnf ";
-    string clauses = "";
 
     int n;
     int m;
     int k;
-
-    ofstream out_sat_cnf;
 
     // matrix used for storing the graph
     // graph[i][j] = 1, if there is an edge between i an j
     //               0, otherwise
     bool graph[NMAX + 1][NMAX + 1] = {false};
 
-    //methods
-
-    void init_output() {
-        out_sat_cnf.open(oracle_in_filename);
-    }
-
+    /**
+     * Reads the problem data
+     */
     void read_problem_data() {
+        // read the number of nodes, edges and the size of the clique
         cin >> n >> m >> k;
         for (int i = 1; i <= m; ++i) {
             int u, v;
@@ -45,207 +36,6 @@ class Task1 : public Task {
             create_edge(u, v);
         }
     }
-    /*
-    void formulate_oracle_question() {
-
-        int variable_number = k * n;
-        int clause_number = 0;
-
-        // build the first section of clauses
-        // there exists one x_iv = true, for each 1 <= v <= n, with 1 <= i <= k 
-        for (int v = 1; v <= n; ++v) {
-            for (int i = 1; i <= k; ++i) {
-                clauses += to_string(get_variable(i, v)) + " ";
-            }
-            ++clause_number;
-            clauses += "0";
-            clauses += "\n";
-        }
-        // ++clause_number;
-        // clauses += "0";
-        // clauses += "\n";
-
-        // build the second section of clauses
-        // not(x_iv) V not(x_jw), with 1 <= i,j <= k, i != j
-        //                             1 <= v,w <= n, (v,w) is not an edge and v != w
-        for (int v = 1; v <= n; ++v) {
-            for (int w = 1; w <= n; ++w) {
-                // get only the pairs of vertices which are not connected by an edge
-                if (v != w && !is_edge(v, w)) {
-                    for (int i = 1; i <= k; ++i) {
-                        for (int j = 1; j <= k; ++j) {
-                            if (i != j) {
-                                // the variables are negated, so according to DIMACS CNF,
-                                // they are negative
-                                // add not(x_iv)
-                                clauses += "-" + to_string(get_variable(i, v)) + " ";
-                                // add not(x_jw)
-                                clauses += "-" + to_string(get_variable(j, w)) + " ";
-                                // each expression not(x_iv) V not(x_jw) is a new clause
-                                ++clause_number;
-                                clauses += "0";
-                                clauses += "\n";
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // build the third section of clauses
-
-        // not(x_iv) V not(x_jv), with 1 <= i,j <= k, i != j; 1 <= v <= n
-        for (int v = 1; v <= n; ++v) {
-            for (int i = 1; i <= k; ++i) {
-                for (int j = 1; j <= k; ++j) {
-                    if (i != j) {
-                        // the variables are negated, so according to DIMACS CNF,
-                        // they are negative
-                        // add not(x_iv)
-                        clauses += "-" + to_string(get_variable(i, v)) + " ";
-                        // add not(x_jv)
-                        clauses += "-" + to_string(get_variable(j, v)) + " ";
-                        // each expression not(x_iv) V not(x_jv) is a new clause
-                        ++clause_number;
-                        clauses += "0";
-                        clauses += "\n";
-                    }
-                }
-            }
-        }
-        // not(x_iv) V not(x_iw), with 1 <= i <= k; 1 <= v,w <= n, v != w
-        for (int v = 1; v <= n; ++v) {
-            for (int w = 1; w <= n; ++w) {
-                if (v != w) {
-                    for (int i = 1; i <= k; ++i) {
-                        // the variables are negated, so according to DIMACS CNF,
-                        // they are negative
-                        // add not(x_iv)
-                        clauses += "-" + to_string(get_variable(i, v)) + " ";
-                        // add not(x_iw)
-                        clauses += "-" + to_string(get_variable(i, w)) + " ";
-                        // each expression not(x_iv) V not(x_iw) is a new clause
-                        ++clause_number;
-                        clauses += "0";
-                        clauses += "\n";
-                    }
-                }
-            }
-        }
-
-        ofstream out_file;
-        out_file.open(oracle_in_filename);
-        out_file << "p cnf " << variable_number << " " << clause_number << "\n";
-
-        // build the first section of clauses
-        // there exists one x_iv = true, for each 1 <= v <= n, with 1 <= i <= k 
-        for (int v = 1; v <= n; ++v) {
-            for (int i = 1; i <= k; ++i) {
-                //clauses += to_string(get_variable(i, v)) + " ";
-                out_file << get_variable(i, v) << " ";
-            }
-            out_file << "0\n";
-            // ++clause_number;
-            // clauses += "0";
-            // clauses += "\n";
-        }
-        // ++clause_number;
-        // clauses += "0";
-        // clauses += "\n";
-
-        // build the second section of clauses
-        // not(x_iv) V not(x_jw), with 1 <= i,j <= k, i != j
-        //                             1 <= v,w <= n, (v,w) is not an edge and v != w
-        for (int v = 1; v <= n; ++v) {
-            for (int w = 1; w <= n; ++w) {
-                // get only the pairs of vertices which are not connected by an edge
-                if (v != w && !is_edge(v, w)) {
-                    for (int i = 1; i <= k; ++i) {
-                        for (int j = 1; j <= k; ++j) {
-                            if (i != j) {
-                                // the variables are negated, so according to DIMACS CNF,
-                                // they are negative
-                                // add not(x_iv)
-                                //clauses += "-" + to_string(get_variable(i, v)) + " ";
-                                out_file << (-1) * get_variable(i, v) << " ";
-                                // add not(x_jw)
-                                //clauses += "-" + to_string(get_variable(j, w)) + " ";
-                                out_file << (-1) * get_variable(j, w) << " ";
-                                // each expression not(x_iv) V not(x_jw) is a new clause
-                                // ++clause_number;
-                                // clauses += "0";
-                                // clauses += "\n";
-                                out_file << "0\n";
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // build the third section of clauses
-
-        // not(x_iv) V not(x_jv), with 1 <= i,j <= k, i != j; 1 <= v <= n
-        for (int v = 1; v <= n; ++v) {
-            for (int i = 1; i <= k; ++i) {
-                for (int j = 1; j <= k; ++j) {
-                    if (i != j) {
-                        // the variables are negated, so according to DIMACS CNF,
-                        // they are negative
-                        // add not(x_iv)
-                        //clauses += "-" + to_string(get_variable(i, v)) + " ";
-                        out_file << (-1) * get_variable(i, v) << " ";
-                        // add not(x_jv)
-                        //clauses += "-" + to_string(get_variable(j, v)) + " ";
-                        out_file << (-1) * get_variable(j, v) << " ";
-                        // each expression not(x_iv) V not(x_jv) is a new clause
-                        // ++clause_number;
-                        // clauses += "0";
-                        // clauses += "\n";
-                        out_file << "0\n";
-                    }
-                }
-            }
-        }
-        // not(x_iv) V not(x_iw), with 1 <= i <= k; 1 <= v,w <= n, v != w
-        for (int v = 1; v <= n; ++v) {
-            for (int w = 1; w <= n; ++w) {
-                if (v != w) {
-                    for (int i = 1; i <= k; ++i) {
-                        // the variables are negated, so according to DIMACS CNF,
-                        // they are negative
-                        // add not(x_iv)
-                        //clauses += "-" + to_string(get_variable(i, v)) + " ";
-                        out_file << (-1) * get_variable(i, v) << " ";
-                        // add not(x_iw)
-                        //clauses += "-" + to_string(get_variable(i, w)) + " ";
-                        out_file << (-1) * get_variable(i, w) << " ";
-                        // each expression not(x_iv) V not(x_iw) is a new clause
-                        // ++clause_number;
-                        // clauses += "0";
-                        // clauses += "\n";
-                        out_file << "0\n";
-                    }
-                }
-            }
-        }
-
-        result += to_string(variable_number) + " ";
-        result += to_string(clause_number) + "\n";
-        result += clauses;
-
-        // if (!(n == 7 && m == 10 && k == 3)) {
-        //     return;
-        // }
-
-        // ofstream out_file;
-        // //out_file.open("out.txt");
-        // out_file.open(oracle_in_filename);
-        //out_file << result;
-
-        // out_file.close();
-    }*/
-
     
     void formulate_oracle_question() {
 
@@ -256,11 +46,13 @@ class Task1 : public Task {
         // x_i1 V x_i2 V ... V x_in, with 1 <= i <= k 
         for (int i = 1; i <= k; ++i) {
             for (int v = 1; v <= n; ++v) {
-                clauses += to_string(get_variable(i, v)) + " ";
+                //clauses += to_string(get_variable(i, v)) + " ";
+                add_variable(i, v, 1);
             }
-            ++clause_number;
-            clauses += "0";
-            clauses += "\n";
+            new_clause(clause_number);
+            // ++clause_number;
+            // clauses += "0";
+            // clauses += "\n";
         }
 
         // build the second section of clauses
@@ -275,40 +67,22 @@ class Task1 : public Task {
                             // the variables are negated, so according to DIMACS CNF,
                             // they are negative
                             // add not(x_iv)
-                            clauses += "-" + to_string(get_variable(i, v)) + " ";
+                            //clauses += "-" + to_string(get_variable(i, v)) + " ";
+                            add_variable(i , v, -1);
                             // add not(x_jw)
-                            clauses += "-" + to_string(get_variable(j, w)) + " ";
+                            //clauses += "-" + to_string(get_variable(j, w)) + " ";
+                            add_variable(j, w, -1);
                             // each expression not(x_iv) V not(x_jw) is a new clause
-                            ++clause_number;
-                            clauses += "0";
-                            clauses += "\n";
+                            new_clause(clause_number);
+                            // ++clause_number;
+                            // clauses += "0";
+                            // clauses += "\n";
                         }
                     }
                 }
             }
         }
 
-        // build the third section of clauses
-        /*
-        // not(x_iv) V not(x_jv), with 1 <= i,j <= k, i != j; 1 <= v <= n
-        for (int v = 1; v <= n; ++v) {
-            for (int i = 1; i <= k; ++i) {
-                for (int j = 1; j <= k; ++j) {
-                    if (i != j) {
-                        // the variables are negated, so according to DIMACS CNF,
-                        // they are negative
-                        // add not(x_iv)
-                        clauses += "-" + to_string(get_variable(i, v)) + " ";
-                        // add not(x_jv)
-                        clauses += "-" + to_string(get_variable(j, v)) + " ";
-                        // each expression not(x_iv) V not(x_jv) is a new clause
-                        ++clause_number;
-                        clauses += "0";
-                        clauses += "\n";
-                    }
-                }
-            }
-        }
         // not(x_iv) V not(x_iw), with 1 <= i <= k; 1 <= v,w <= n, v != w
         for (int v = 1; v <= n; ++v) {
             for (int w = 1; w <= n; ++w) {
@@ -317,17 +91,20 @@ class Task1 : public Task {
                         // the variables are negated, so according to DIMACS CNF,
                         // they are negative
                         // add not(x_iv)
-                        clauses += "-" + to_string(get_variable(i, v)) + " ";
+                        //clauses += "-" + to_string(get_variable(i, v)) + " ";
+                        add_variable(i, v, -1);
                         // add not(x_iw)
-                        clauses += "-" + to_string(get_variable(i, w)) + " ";
+                        //clauses += "-" + to_string(get_variable(i, w)) + " ";
+                        add_variable(i, w, -1);
                         // each expression not(x_iv) V not(x_iw) is a new clause
-                        ++clause_number;
-                        clauses += "0";
-                        clauses += "\n";
+                        new_clause(clause_number);
+                        // ++clause_number;
+                        // clauses += "0";
+                        // clauses += "\n";
                     }
                 }
             }
-        }*/
+        }
 
         // not(x_iv) V not(x_jv), with 1 <= i < j <= k; 1 <= v <= n
         for (int v = 1; v <= n; ++v) {
@@ -336,13 +113,16 @@ class Task1 : public Task {
                     // the variables are negated, so according to DIMACS CNF,
                     // they are negative
                     // add not(x_iv)
-                    clauses += "-" + to_string(get_variable(i, v)) + " ";
+                    //clauses += "-" + to_string(get_variable(i, v)) + " ";
+                    add_variable(i, v, -1);
                     // add not(x_jv)
-                    clauses += "-" + to_string(get_variable(j, v)) + " ";
+                    //clauses += "-" + to_string(get_variable(j, v)) + " ";
+                    add_variable(j, v, -1);
                     // each expression not(x_iv) V not(x_jv) is a new clause
-                    ++clause_number;
-                    clauses += "0";
-                    clauses += "\n";
+                    new_clause(clause_number);
+                    // ++clause_number;
+                    // clauses += "0";
+                    // clauses += "\n";
                 }
             }
         }
@@ -352,21 +132,20 @@ class Task1 : public Task {
         result += to_string(clause_number) + "\n";
         result += clauses;
 
-        // if (!(n == 7 && m == 10 && k == 3)) {
-        //     return;
-        // }
-
         ofstream out_file;
-        //out_file.open("out.txt");
+
         out_file.open(oracle_in_filename);
         out_file << result;
-
-        // out_file.close();
     }
 
     void solve() {
-        return;
+        read_problem_data();
+        formulate_oracle_question();
+        ask_oracle();
+        decipher_oracle_answer();
+        write_answer();
     }
+
     void decipher_oracle_answer() {
         
         ifstream in_file;
@@ -407,43 +186,13 @@ class Task1 : public Task {
     void write_answer() {
         cout << result;
     }
-
-
-    int get_variable(int i, int v) {
-        int number = (v - 1) * k;
-        number += i;
-        return number;
-    }
-
-    int get_node(int var) {
-        if (var % k == 0) {
-            return var / k;
-        } else {
-            return var / k + 1;
-        }
-    }
-
-    void create_edge(int u, int v) {
-        graph[u][v] = true;
-        graph[v][u] = true;
-    }
-
-    bool is_edge(int u, int v) {
-        return (graph[u][v] == true);
-    }
 };
 
 int main() {
 
     Task1 task1;
 
-    out_test.open("test.txt", std::ios_base::app);
-
-    task1.read_problem_data();
-    task1.formulate_oracle_question();
-    task1.ask_oracle();
-    task1.decipher_oracle_answer();
-    task1.write_answer();
+    task1.solve();
 
     return 0;
 }
