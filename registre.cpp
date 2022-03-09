@@ -9,19 +9,26 @@ using namespace std;
 
 ofstream out_test;
 
+/**
+ * Class for the third task (k-Coloring)
+ */
 class Task3 : public Task {
   public:
-
-    int n;
-    int m;
-    int k;
-
-    // matrix used for storing the graph
-    // graph[i][j] = 1, if there is an edge between i an j
-    //               0, otherwise
-    bool graph[NMAX + 1][NMAX + 1] = {false};
     
+    /**
+     * For this task, the VARIABLES can be viewed as VERTICES and the RELATIONS between them
+     * as EDGES. This way, the register allocation problem is basically equivalent to the
+     * k-Coloring problem on the graph.
+     * 
+     * x_iv = true <=> Variable v is stored in register i <=> Vertex v is colored with color i
+     */
+
+    /**
+     * Reads the problem data from STDIN
+     */
     void read_problem_data() {
+        // Read the number of variables, the number of relations between them and the number
+        // of registers that can be used
         cin >> n >> m >> k;
         for (int i = 1; i <= m; ++i) {
             int u, v;
@@ -30,22 +37,28 @@ class Task3 : public Task {
         }
     }
 
+    /**
+     * Formulates a question in CNF format for the oracle (SAT solver)
+     */
     void formulate_oracle_question() {
 
         int variable_number = k * n;
         int clause_number = 0;
 
-        // build the first section of clauses
-        // x_i1 V x_i2 V ... V x_in, with 1 <= i <= k  
+        // Build the first section of clauses
+        // Every vertex v MUST be colored with a color i
+        // x_1v V x_2v V ... V x_kv, with 1 <= v <= n  
         for (int v = 1; v <= n; ++v) {
             for (int i = 1; i <= k; ++i) {
+                // add x_iv to the current clause
                 add_variable(i, v, 1);
             }
+            // each x_1v V x_2v V ... V x_kv is a new clause
             new_clause(clause_number);
         }
 
-        // build the second section of clauses
-        // for every edge (v, w), v and w CANNOT be stored in the same register i
+        // Build the second section of clauses
+        // For every edge (v, w), v and w CANNOT be colored with the same color i
         // not(x_iv) V not(x_iw), with 1 <= i < j <= k
         //                             1 <= v,w <= n, (v, w) is an edge and v != w
         for (int v = 1; v <= n; ++v) {
@@ -66,6 +79,9 @@ class Task3 : public Task {
             }
         }
 
+        // Build the third section of clauses
+        // Each vertex v has a single color, so it cannot be colored with both
+        // the i and the j color
         // not(x_iv) V not(x_jv), with 1 <= i < j <= k; 1 <= v <= n
         for (int v = 1; v <= n; ++v) {
             for (int i = 1; i <= k; ++i) {
@@ -82,7 +98,8 @@ class Task3 : public Task {
             }
         }
         
-
+        // create the string which contains the question in DIMACS CNF format
+        result = "p cnf ";
         result += to_string(variable_number) + " ";
         result += to_string(clause_number) + "\n";
         result += clauses;
@@ -109,6 +126,7 @@ class Task3 : public Task {
         string boolean_value;
         in_file >> boolean_value;
 
+        // if the clauses can't be solved, print "False"
         if (boolean_value == "False") {
             result = "False";
             return;
@@ -127,8 +145,8 @@ class Task3 : public Task {
         in_file >> var_num;
         for (int i = 1; i <= var_num; ++i) {
             int var;
-            // var represents an element x_iv, which is true if the variable v can be stored
-            // in the register i and false otherwise
+            // var represents an element x_iv, which is true if the variable v can colored with
+            // color i and false otherwise
 
             in_file >> var;
 
@@ -144,12 +162,12 @@ class Task3 : public Task {
             x[register_number][variable_number] = true;
         }
 
-        // if x_iv = false <=> it means that the register i can't be assigned
-        // to v, so we need to find a register which can be assigned to v
+        // if x_iv = false <=> it means that the color i can't be assigned
+        // to v, so we need to find a color which can be assigned to v
         //(basically search for a variable x_iv = true, with 1 <= i <= k)
         for (int v = 1; v <= n; ++v) {
             for (int i = 1; i <= k; ++i) {
-                // if a register i can be assigned to it, print it
+                // if a color (register) i can be assigned to v, print it
                 if (x[i][v] == true) {
                     result += to_string(i) + " ";
                     break;
@@ -160,6 +178,14 @@ class Task3 : public Task {
     
     void write_answer() {
         cout << result;
+    }
+
+    int get_register(int var) {
+        if (var % k == 0) {
+            return k;
+        } else {
+            return var % k;
+        }
     }
 };
 

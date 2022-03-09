@@ -1,0 +1,117 @@
+Reductions to SAT
+
+Task1 - k-Clique
+Task2 - Maximal Inpependent Set
+Task3 - k-Coloring
+
+For building a question for the oracle in DIMACS CNF format, we must associate to each variable
+a unique number. Thus, I am using the following formula:
+
+* For assigning to each variable a number, I considered the variables in the following order:
+    - x_11, x_21,..., x_k1, x_12, x_22,..., x_k2, ..., x_1n, x_2n,..., x_kn
+       1     2   ...   k    k+1   k+2  ...  2k   ...(n-1)*k+1 ... ,   n*k
+    
+    - Thus, a variable x_iv (with 1 <= i <= k, 1 <= v <= n) will have the associated number:
+      (v - 1) * k + i
+    - If we have a number p, then:
+        * v is p / k (+1 if p is not multiple of k).
+        * i is p % k or k if p is multiple of k
+
+The clauses are described in detail also in comments in every task.
+
+The number of variables is n*k, so there are 2^(n*k) True and False combinations the SAT solver
+can try
+
+* K-Clique
+    - the variable used in the CNF format is:
+        x_iv - true if vertex v is on the i-th position in the clique, false otherwise
+
+    - the number of variables used is n * k
+
+    - in order to reduce this problem to SAT we use 4 sets of clauses:
+        * For every index i, there must exist an i-th vertex in the clique:
+          - x_i1 V x_i2 V ... V x_in, with 1 <= i <= k
+          - Complexity: O(n*k) to build this set of clauses
+
+        * For every NON-EDGE (v, w), v and w cannot both be in the clique, since between any
+          pair of vertices (v, w) from the clique, there must exist an edge.
+          - not(x_iv) V not(x_jw), with 1 <= i < j <= k; 1 <= v,w <= n
+            (v,w) is not an edge and v != w
+          - Complexity: O(m + (n^2 - m) * k*(k-1)/2) to build this set of clauses,
+            so it can be considered O(m + (n^2 - m) * k^2)
+
+        * Two different vertices cannot both be the i-th vertex in the clique
+          - not(x_iv) V not(x_iw), with 1 <= i <= k; 1 <= v,w <= n; v != w
+          - Complexity: O(n^2 * k) to build this set of clauses
+
+        * Each vertex v cannot be both the i-th and the j-th vertex in the clique
+          - not(x_iv) V not(x_jv), with 1 <= i < j <= k; 1 <= v <= n
+          - Complexity: O(n * k*(k-1)/2) to build this set of clauses, so it is
+            O(n * k^2)
+
+* Maximal Independent Set
+    - although task2 is basically vertex cover, I noticed that it is more time-efficient to
+      find a maximal independent set and then take the vertices which do not belong to it,
+      probably because there are more non-edges than edges.
+
+    - the variable used in the CNF format is:
+        x_iv - true if vertex v is on the i-th position in the independent set, false otherwise
+
+    - the number of variables used is n * k
+
+    - in order to increase time-efficiency, the size of the independent set k is determined using
+      a binary search (explained in detail in the task), keeping in mind the following observation:
+        * if an independent set can't be formed with a number k of vertices, then evidently a bigger
+          number of vertices can't form a set. (because adding new vertices can only bring new edges,
+          and we want to have NO edges in the independent set)
+
+    - therefore, the independent set clauses will be built log(n) times (the problem will be
+      executed log(n) times)
+
+    - in order to reduce l-Independent Set to SAT we use 4 sets of clauses:
+        * For every index i, there must exist an i-th vertex in the independent set
+          - x_i1 V x_i2 V ... V x_in, with 1 <= i <= k 
+          - Complexity: O(n*k) to build this set of clauses
+
+        * For every EDGE (v, w), v and w cannot both be in the independent set, since between any
+          pair of vertices (v, w) from the independent set, there must NOT be an edge.
+          - not(x_iv) V not(x_jw), with 1 <= i < j <= k; 1 <= v,w <= n; (v,w) is an edge and v != w
+          - Complexity: O(n^2 - m + m * (k*(k-1)/2)) to build this set of clauses, so it can be 
+            considered O(n^2 - m + m * k^2)
+
+        * Each vertex v cannot be both the i-th and the j-th vertex in the independent set
+          - not(x_iv) V not(x_jv), with 1 <= i < j <= k; 1 <= v <= n
+          - Complexity: O(n * k*(k-1)/2) to build this set of clauses, so
+            O(n * k^2)
+
+        * Two different vertices cannot both be the i-th vertex in the independent set
+          - not(x_iv) V not(x_iw), with 1 <= i <= k; 1 <= v, w <= n
+          - Complexity: O(n^2 * k) to build this set of clauses
+          
+* K-Coloring
+    - the register allocation problem can be viewed as the k-Coloring problem:
+        * each variable which must be stored in a register is a vertex
+        * each register is a color
+        * if two variables are dependent, then there is an edge between them
+        * a variable v is stored in the register i <=> vertex v is colored with color i
+        * two dependent variables (there is an edge between them) can not be stored in the
+          same register (can not be colored with the same color)
+
+    - the variable used in the CNF format is:
+        x_iv - true if vertex v can be colored with color i, false otherwise
+
+    - the number of variables used is n * k
+
+    - in order to reduce this problem to SAT we use 3 sets of clauses:
+        * Every vertex v MUST be colored with a color i
+          - x_1v V x_2v V ... V x_kv, with 1 <= v <= n  
+          - Complexity: O(n*k) to build this set of clauses
+
+        * For every edge (v, w), v and w CANNOT be colored with the same color i
+          - not(x_iv) V not(x_iw), with 1 <= i < j <= k; 1 <= v,w <= n; (v, w) is an edge and v != w
+          - Complexity: O(n^2 - m + m * k) to build this set of clauses
+
+        * Each vertex v has a single color, so it cannot be colored with both the i and the j color
+          - not(x_iv) V not(x_jv), with 1 <= i < j <= k; 1 <= v <= n
+          - Complexity: O(n * (k*(k-1)/2)) to build this set of clauses, so
+            O(n * k^2)

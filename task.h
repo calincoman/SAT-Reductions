@@ -28,9 +28,13 @@ class Task {
     string oracle_out_filename = "sat.sol";
 
     // string used for writing in the sat.cnf file and in the output file
-    string result = "p cnf ";
+    string result = "";
     // string used for building the clauses
     string clauses = "";
+
+    int n;
+    int m;
+    int k;
 
     // the verdict given by the oracle (SAT solver)  - true or false
     bool oracle_verdict;
@@ -89,6 +93,10 @@ class Task {
         }
     }
 
+    /**
+     * Adds a variable to the current clause
+     * @param negated is -1 if the variable is negated, 1 otherwise
+     */
     void add_variable(int i, int v, int negated) {
         if (negated == -1) {
             clauses += "-";
@@ -96,25 +104,28 @@ class Task {
         clauses += to_string(get_variable(i, v)) + " ";
     }
 
+    /**
+     * Adds a new clause and modifies the number of clauses
+     * @param clause_number reference to the number of clauses
+     */
     void new_clause(int &clause_number) {
         ++clause_number;
         clauses += "0";
         clauses += "\n";
     }
 
-    int get_register(int var) {
-        if (var % k == 0) {
-            return k;
-        } else {
-            return var % k;
-        }
-    }
-
+    /**
+     * Creates an edge between two vertices
+     */
     void create_edge(int u, int v) {
         graph[u][v] = true;
         graph[v][u] = true;
     }
 
+    /**
+     * Determines if there is an edge between two vertices
+     * @return true if there is an edge between u and v, false otherwise
+     */
     bool is_edge(int u, int v) {
         return (graph[u][v] == true);
     }

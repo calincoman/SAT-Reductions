@@ -15,20 +15,11 @@ ofstream out_test;
 class Task1 : public Task {
   public:
 
-    int n;
-    int m;
-    int k;
-
-    // matrix used for storing the graph
-    // graph[i][j] = 1, if there is an edge between i an j
-    //               0, otherwise
-    bool graph[NMAX + 1][NMAX + 1] = {false};
-
     /**
-     * Reads the problem data
+     * Reads the problem data from STDIN
      */
     void read_problem_data() {
-        // read the number of nodes, edges and the size of the clique
+        // read the number of nodes, edges and the size of the searched clique
         cin >> n >> m >> k;
         for (int i = 1; i <= m; ++i) {
             int u, v;
@@ -37,25 +28,33 @@ class Task1 : public Task {
         }
     }
     
+    /**
+     * Formulates a question in CNF format for the oracle (SAT solver)
+     */
     void formulate_oracle_question() {
 
         int variable_number = k * n;
         int clause_number = 0;
 
-        // build the first section of clauses
+        /**
+        * x_iv = true <=> Vertex v is on the i-th position in the k-Clique
+        */ 
+
+        // Build the first section of clauses
+        // For every index i, there must exist an i-th vertex in the clique
         // x_i1 V x_i2 V ... V x_in, with 1 <= i <= k 
         for (int i = 1; i <= k; ++i) {
             for (int v = 1; v <= n; ++v) {
-                //clauses += to_string(get_variable(i, v)) + " ";
+                // add x_iv to the current clause
                 add_variable(i, v, 1);
             }
+            // each x_i1 V x_i2 V ... V x_in is a new clause
             new_clause(clause_number);
-            // ++clause_number;
-            // clauses += "0";
-            // clauses += "\n";
         }
 
-        // build the second section of clauses
+        // Build the second section of clauses
+        // For every NON-EDGE (v, w), v and w cannot both be in the clique, since between any
+        // pair of vertices (v, w) from the clique, there must exist an edge.
         // not(x_iv) V not(x_jw), with 1 <= i < j <= k
         //                             1 <= v,w <= n, (v,w) is not an edge and v != w
         for (int v = 1; v <= n; ++v) {
@@ -67,22 +66,19 @@ class Task1 : public Task {
                             // the variables are negated, so according to DIMACS CNF,
                             // they are negative
                             // add not(x_iv)
-                            //clauses += "-" + to_string(get_variable(i, v)) + " ";
-                            add_variable(i , v, -1);
+                            add_variable(i, v, -1);
                             // add not(x_jw)
-                            //clauses += "-" + to_string(get_variable(j, w)) + " ";
                             add_variable(j, w, -1);
                             // each expression not(x_iv) V not(x_jw) is a new clause
                             new_clause(clause_number);
-                            // ++clause_number;
-                            // clauses += "0";
-                            // clauses += "\n";
                         }
                     }
                 }
             }
         }
 
+        // Build the third section of clauses
+        // Two different vertices cannot both be the i-th vertex in the clique
         // not(x_iv) V not(x_iw), with 1 <= i <= k; 1 <= v,w <= n, v != w
         for (int v = 1; v <= n; ++v) {
             for (int w = 1; w <= n; ++w) {
@@ -91,21 +87,18 @@ class Task1 : public Task {
                         // the variables are negated, so according to DIMACS CNF,
                         // they are negative
                         // add not(x_iv)
-                        //clauses += "-" + to_string(get_variable(i, v)) + " ";
                         add_variable(i, v, -1);
                         // add not(x_iw)
-                        //clauses += "-" + to_string(get_variable(i, w)) + " ";
                         add_variable(i, w, -1);
                         // each expression not(x_iv) V not(x_iw) is a new clause
                         new_clause(clause_number);
-                        // ++clause_number;
-                        // clauses += "0";
-                        // clauses += "\n";
                     }
                 }
             }
         }
 
+        // Build the fourth section of clauses
+        // Each vertex v cannot be both the i-th and the j-th vertex in the clique
         // not(x_iv) V not(x_jv), with 1 <= i < j <= k; 1 <= v <= n
         for (int v = 1; v <= n; ++v) {
             for (int i = 1; i <= k; ++i) {
@@ -113,27 +106,24 @@ class Task1 : public Task {
                     // the variables are negated, so according to DIMACS CNF,
                     // they are negative
                     // add not(x_iv)
-                    //clauses += "-" + to_string(get_variable(i, v)) + " ";
                     add_variable(i, v, -1);
                     // add not(x_jv)
-                    //clauses += "-" + to_string(get_variable(j, v)) + " ";
                     add_variable(j, v, -1);
                     // each expression not(x_iv) V not(x_jv) is a new clause
                     new_clause(clause_number);
-                    // ++clause_number;
-                    // clauses += "0";
-                    // clauses += "\n";
                 }
             }
         }
         
-
+        // create the string which contains the question in DIMACS CNF format
+        result = "p cnf ";
         result += to_string(variable_number) + " ";
         result += to_string(clause_number) + "\n";
         result += clauses;
 
         ofstream out_file;
 
+        // write the string in the sat.cnf file
         out_file.open(oracle_in_filename);
         out_file << result;
     }
@@ -146,6 +136,9 @@ class Task1 : public Task {
         write_answer();
     }
 
+    /**
+     * Reads the SAT solver's result and parses it
+     */
     void decipher_oracle_answer() {
         
         ifstream in_file;
@@ -154,6 +147,7 @@ class Task1 : public Task {
         string boolean_value;
         in_file >> boolean_value;
 
+        // if the clauses can't be solved, print "False"
         if (boolean_value == "False") {
             result = "False";
             return;
@@ -167,22 +161,25 @@ class Task1 : public Task {
         in_file >> var_num;
         for (int i = 1; i <= var_num; ++i) {
             int var;
-            // var represents an element x_iv, which is true if v is the i^th node in the clique
+            // var represents an element x_iv, which is true if v is the i-th vertex in the clique
             // and false if it isn't
             // var is negative <=> x_iv = false, positive <=> x_iv = true
             in_file >> var;
             if (var < 0) {
-                // if it is false, x_iv = false <=> it means the node associated to
+                // if it is false, x_iv = false <=> it means the vertex associated to
                 // this variable is not in the found clique
                 continue;
             }
-            // if it is true, we must determine the value of v (the node) based on the associated
+            // if it is true, we must determine the value of v (the vertex) based on the associated
             // variable number (number associated to each x_iv)
             int v = get_node(var);
             result += to_string(v) + " ";
         }
 
     }
+    /**
+     * Writes the result to STDOUT
+     */
     void write_answer() {
         cout << result;
     }
